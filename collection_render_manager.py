@@ -21,6 +21,7 @@ class CRMCollection(bpy.types.PropertyGroup):
     list : bpy.props.CollectionProperty(type=CRMCollectionItem)
     customName : bpy.props.StringProperty()
     active : bpy.props.BoolProperty()
+    isRendering : bpy.props.BoolProperty()
     
 # -------------------------------------------------------------------
 #   CRM Operators
@@ -126,16 +127,24 @@ class CRM_OT_Render(bpy.types.Operator):
         fpo = bpy.context.scene.render.filepath
         fp = fpo + "\\" +bpy.context.scene.crm_base_name
         vl = bpy.context.scene.view_layers[0]
-        cf = 1
+        currentFrame = 1
+        endFrame = currentFrame
+        #prevItem = ""
         
-        while cf <= bpy.context.scene.frame_end:
+        if(bpy.context.scene.crm_render_timeline):
+            endFrame = bpy.context.scene.frame_end
+        
+        while currentFrame <= endFrame:
             #print("iterating", cf)
         
-            bpy.context.scene.frame_set(cf)
+            bpy.context.scene.frame_set(currentFrame)
         
             for CRMCollection in bpy.context.scene.crm_list:
                 
-                bpy.context.scene.render.filepath = fp+"_"+CRMCollection.customName+"_mat"+str(cf)
+                bpy.context.scene.render.filepath = fp+"_"+CRMCollection.customName
+                
+                if(bpy.context.scene.crm_render_timeline):
+                    bpy.context.scene.render.filepath += "_MAT"+str(currentFrame)
                 
                 for lc in vl.layer_collection.children:
                     lc.exclude = True
@@ -143,12 +152,27 @@ class CRM_OT_Render(bpy.types.Operator):
                         if item.collectionName == lc.name:
                             lc.exclude = False
                 
+                
+                #if(prevItem != ""):
+                #    bpy.context.scene.crm_list[prevItem].isRendering = False
+                
+                #prevItem = ""
+                
+                    
                 if(CRMCollection.active):
                     bpy.ops.render.render(write_still=True)
+                    #bpy.ops.render.render('INVOKE_DEFAULT', write_still=True)
+                    #CRMCollection.isRendering = True
+                    #prevItem = CRMCollection.name
                 
-            cf+=1
+            currentFrame+=1
+        
+        #Reset values
+        if(prevItem != ""):
+            bpy.context.scene.crm_list[prevItem].isRendering = False
             
         bpy.context.scene.render.filepath = fpo
+        bpy.context.scene.frame_set(1)
         
         return {"FINISHED"}
     
@@ -158,7 +182,7 @@ class CRM_OT_Render(bpy.types.Operator):
 
 class VIEW3D_PT_CollectionRenderManager(bpy.types.Panel):
     bl_category = "Custom Tools"
-    bl_label = "Collection Render Manager"
+    bl_label = "COLLECTION RENDER MANAGER"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     
@@ -184,9 +208,7 @@ class VIEW3D_PT_CollectionRenderManager(bpy.types.Panel):
         row = box.row()
         row.operator("crm.add", text="ADD", icon="COLLECTION_NEW")
         
-        box.separator()
-        box.separator()
-        box.separator()
+        box.separator(factor=5.0)
         
         box.label(text="COLLECTION Groups", icon="OUTLINER_OB_GROUP_INSTANCE")
         box.separator()
@@ -225,6 +247,9 @@ class VIEW3D_PT_CollectionRenderManager(bpy.types.Panel):
             
             row.prop(crmItem, "customName", text="")
             
+            #if (crmItem.isRendering):
+            #    row.prop(crmItem, "isRendering", text="", icon="BLENDER")
+            
             rendericon = "RESTRICT_RENDER_ON"
             if (crmItem.active):
                 rendericon = "RESTRICT_RENDER_OFF"
@@ -236,14 +261,18 @@ class VIEW3D_PT_CollectionRenderManager(bpy.types.Panel):
             op = row.operator("crm.delete", text="", icon="TRASH")
             op.CRMname = crmItem.name
         
-        box.separator()
-        
+        box.separator(factor=3.0)
         
         row = box.row()
         row.prop(bpy.context.scene, "crm_base_name", text="Base Name")
         
         row = box.row()
         row.prop(bpy.context.scene.render, "filepath", text="Destination")
+        
+        row = box.row()
+        row.prop(bpy.context.scene, "crm_render_timeline", text="Render All Keyframes")
+        
+        box.separator(factor=3.0)
         
         row = box.row()
         row.operator("crm.renderer", text="RENDER", icon="RESTRICT_RENDER_OFF")
@@ -269,8 +298,9 @@ def register():
         register_class(cls)
         
     bpy.types.Scene.crm_list = bpy.props.CollectionProperty(type=CRMCollection)
-    bpy.types.Scene.crm_index = 1
-    bpy.types.Scene.crm_base_name = "BASENAME"
+    bpy.types.Scene.crm_index = bpy.props.IntProperty(default = 1)
+    bpy.types.Scene.crm_base_name = bpy.props.StringProperty(default = "BASENAME")
+    bpy.types.Scene.crm_render_timeline = bpy.props.BoolProperty(default = True)
     
 def unregister():
     from bpy.utils import unregister_class
@@ -280,6 +310,7 @@ def unregister():
     del bpy.types.Scene.crm_list
     del bpy.types.Scene.crm_index
     del bpy.types.Scene.crm_base_name
+    del bpy.types.Scene.crm_render_timeline
     
 if __name__ == "__main__":
     register()
