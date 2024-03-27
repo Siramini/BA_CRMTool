@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Collection Render Manager",
     "author": "Peter",
-    "version": (1, 0, 3),
+    "version": (1, 0, 4),
     "blender": (3, 60, 0),
     "location": "3D Viewport > Sidebar > Custom Tools",
     "description": "Collection render manager tool",
@@ -69,6 +69,7 @@ class CRMPopupOperator(bpy.types.Operator):
                 if(lc.hide_viewport == False): #is visible
                     for item in crmItem.list:
                         if(lc.name == item.collectionName):
+                            #print("found: " + item.collectionName)
                             hasMatch = True
                 else: #is not visible
                     hasMatch = True
@@ -78,8 +79,6 @@ class CRMPopupOperator(bpy.types.Operator):
                     
                 if(hasMatch):
                     matches += 1
-                        
-            
                         
             if(matches == len(vl.layer_collection.children)):
                 current_selection = "HIDE_OFF"
@@ -317,11 +316,11 @@ class CRM_OT_Add(bpy.types.Operator):
         
         vl = bpy.context.scene.view_layers[0]
         for lc in vl.layer_collection.children:
-            if( lc.exclude == False ):
+            if( lc.hide_viewport == False ):
                 newCRMItem = newCRMCollection.list.add()
                 newCRMItem.name = "item_" + str(len(newCRMCollection.list))
                 newCRMItem.collectionName = lc.name
-                print("added", lc.name)
+                print("added", lc.name, lc.hide_viewport)
     
         return {"FINISHED"}
     
@@ -651,7 +650,7 @@ def register():
     kc = wm.keyconfigs.addon
     if kc:
         km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
-        kmi = km.keymap_items.new(CRMPopupOperator.bl_idname, type='M', value='PRESS', ctrl=True)
+        kmi = km.keymap_items.new(CRMPopupOperator.bl_idname, type='M', value='PRESS', ctrl=True, shift=True)
         addon_keymaps.append((km, kmi))
     
 def unregister():
