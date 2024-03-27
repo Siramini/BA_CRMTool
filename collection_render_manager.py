@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Collection Render Manager",
     "author": "Peter",
-    "version": (1, 0, 1),
+    "version": (1, 0, 4),
     "blender": (3, 60, 0),
     "location": "3D Viewport > Sidebar > Custom Tools",
     "description": "Collection render manager tool",
@@ -41,7 +41,8 @@ class CRMPopupOperator(bpy.types.Operator):
         vl = bpy.context.scene.view_layers[0]
         for collection in vl.layer_collection.children:
             row = boxframe.row()
-            row.prop(collection, "exclude", text="")
+            #row.prop(collection, "exclude", text="")
+            row.prop(collection, "hide_viewport", text="")
             #row.prop(collection, "name", text="")
             row.label(text="%s" % (collection.name))
         
@@ -65,7 +66,7 @@ class CRMPopupOperator(bpy.types.Operator):
             
             for lc in vl.layer_collection.children:
                 hasMatch = False
-                if(lc.exclude == False): #is visible
+                if(lc.hide_viewport == False): #is visible
                     for item in crmItem.list:
                         if(lc.name == item.collectionName):
                             hasMatch = True
@@ -188,7 +189,7 @@ class CRMPopupOperator(bpy.types.Operator):
         for obj in bpy.context.scene.objects:
             if obj.type == "CAMERA":
                 row = boxframe.row()
-                row.prop(obj, "hide_viewport", text="", icon="")
+                row.prop(obj, "hide_viewport", text="", icon="NONE")
                 row.label(text="%s" % (obj.name))
             
         box.separator(factor=5.0)
@@ -271,13 +272,16 @@ class CRM_OT_Select(bpy.types.Operator):
     CRMname : bpy.props.StringProperty()
     
     def execute(self, context):
+        
+        #print("collections >>");
     
         vl = bpy.context.scene.view_layers[0]
         for lc in vl.layer_collection.children:
-            lc.exclude = True
+            #print("collection " + lc.name);
+            lc.hide_viewport = True
             for item in bpy.context.scene.crm_list[self.CRMname].list:
                 if item.collectionName == lc.name:
-                    lc.exclude = False
+                    lc.hide_viewport = False
                     
         return {"FINISHED"}
     
@@ -583,10 +587,10 @@ class CRM_OT_RenderCollection(bpy.types.Operator):
             bpy.context.scene.render.filepath += self.suffix
             
             for lc in vl.layer_collection.children:
-                lc.exclude = True
+                lc.hide_viewport = True
                 for item in CRMCollection.list:
                     if item.collectionName == lc.name:
-                        lc.exclude = False
+                        lc.hide_viewport = False
             
             
             if(CRMCollection.active):
