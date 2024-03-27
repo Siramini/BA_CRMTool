@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Collection Render Manager",
     "author": "Peter",
-    "version": (1, 0, 4),
+    "version": (1, 0, 3),
     "blender": (3, 60, 0),
     "location": "3D Viewport > Sidebar > Custom Tools",
     "description": "Collection render manager tool",
